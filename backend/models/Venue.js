@@ -26,6 +26,11 @@ class Venue {
         
         return result.affectedRows > 0
     }
+
+    static async delete(id){
+        const [result] = await db.query("DELETE FROM venues WHERE id = ?", [id])
+        return result.affectedRows > 0;
+    }
 }
 
 module.exports = Venue;
