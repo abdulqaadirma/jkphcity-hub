@@ -26,4 +26,4 @@ Write here!
 
 - Create Postgres DB
 - Add extra columns/attributes (Grade 5)
-- Add table for users
+- Add table for users (Grade 5)
