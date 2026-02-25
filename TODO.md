@@ -5,6 +5,9 @@
 Who should do what?
 Write here!
 
+- Begin login: Abdulqaadir
+- Begin web-page: Mårten
+
 ## Frontend
 
 - Design web-page
