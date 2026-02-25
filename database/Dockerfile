@@ -1,2 +1,7 @@
-FROM mysql:8.0
-COPY init.sql /docker-entrypoint-initdb.d/
+FROM postgres:16
+
+ENV POSTGRES_USER postgres
+ENV POSTGRES_PASSWORD postgres
+ENV POSTGRES_DB jkpg-db
+
+EXPOSE 5432

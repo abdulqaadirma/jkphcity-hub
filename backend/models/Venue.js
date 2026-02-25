@@ -1,35 +1,73 @@
-const db = require("../config/database")
+const client = require('../config/database');
 
 class Venue {
     static async findAll() {
-        const [rows] = await db.query('SELECT * FROM venues');
-        return rows;
+        try {
+            const res = await client.query('SELECT * FROM venues ORDER BY name');
+            return res.rows;
+        } catch (error) {
+            throw error;
+        }
     }
 
-    static async findById(id){
-        const [row] = await db.query("SELECT * FROM venues WHERE id = ?", [id])
-        return row[0]
+    static async findById(id) {
+        try {
+            const res = await client.query('SELECT * FROM venues WHERE id = $1', [id]);
+            return res.rows[0];
+        } catch (error) {
+            throw error;
+        }
     }
 
-    static async create(venueData){
-        const {name, url, district, category, phone, description} = venueData
-        const [result] = await db.query("INSERT INTO venues (name, url, district, category, phone, description) values(?,?,?,?,?,?)", 
-            [name, url, district, category, phone, description])
+    static async create(venueData) {
+        const { name, url, district, category, phone, description } = venueData;
+        const query = `
+            INSERT INTO venues (name, url, district, category, phone, description)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING id
+        `;
         
-        return result.insertId
+        try {
+            const res = await client.query(query, [name, url, district, category, phone, description]);
+            return res.rows[0].id;
+        } catch (error) {
+            throw error;
+        }
     }
 
-    static async update(id, venueData){
-        const {name, url, district, category, phone, description} = venueData
-        const [result] = await db.query("UPDATE venues SET name=?, url=?, district=?, category=?, phone=?, description=? WHERE id = ?", 
-            [name, url, district, category, phone, description, id])
+    static async update(id, venueData) {
+        const { name, url, district, category, phone, description } = venueData;
+        const query = `
+            UPDATE venues 
+            SET name = $1, url = $2, district = $3, category = $4, phone = $5, description = $6
+            WHERE id = $7
+            RETURNING id
+        `;
         
-        return result.affectedRows > 0
+        try {
+            const res = await client.query(query, [name, url, district, category, phone, description, id]);
+            return res.rows.length > 0;
+        } catch (error) {
+            throw error;
+        }
     }
 
-    static async delete(id){
-        const [result] = await db.query("DELETE FROM venues WHERE id = ?", [id])
-        return result.affectedRows > 0;
+    static async delete(id) {
+        try {
+            const res = await client.query('DELETE FROM venues WHERE id = $1 RETURNING id', [id]);
+            return res.rows.length > 0;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    static async findByDistrict(district) {
+        try {
+            const res = await client.query('SELECT * FROM venues WHERE district = $1 ORDER BY name', [district]);
+            return res.rows;
+        } catch (error) {
+            throw error;
+        }
     }
 }
 
