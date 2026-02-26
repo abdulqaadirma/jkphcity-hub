@@ -7,6 +7,7 @@ Write here!
 
 - Begin login: Abdulqaadir
 - Begin web-page: Mårten
+- Begin REST API calls (GET, POST, PUT, DELETE) on client side: Daniel
 
 ## Frontend
 
