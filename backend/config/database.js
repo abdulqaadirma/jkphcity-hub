@@ -1,32 +1,69 @@
 const { Client } = require("pg")
+const bcrypt = require('bcryptjs');
 
 const client = new Client({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
+    host: process.env.DB_HOST || "localhost",
+    user: process.env.DB_USER || "postgres",
+    password: process.env.DB_PASSWORD || "postgres",
+    database: process.env.DB_NAME || "jkpg-db",
     port: process.env.DB_PORT || 5432,
 });
-
 
 async function connectDB() {
     try{
         await client.connect();
-        console.log("")
-        console.log('Connected to PostgreSQL database with async/await');
-        await addSampleVenues(); 
+        console.log("Connected to PostgreSQL database");
+        
+        // Create tables in correct order
+        await createVenuesTable();
+        await createUsersTable(); // ADDED THIS!
+
+        await createAdminUser();
+        
+        // Add sample data
+        await addSampleVenues();
+        
     } catch (err) {
-    console.error('Connection error', err.stack);
+        console.error('Connection error', err.stack);
+        // Retry connection after 5 seconds
+        setTimeout(connectDB, 5000);
     }
 }
 
-connectDB(); // should be called before any other function
+// Create admin user (FIXED - no duplicate connection)
+async function createAdminUser() {
+    try {
+        // Check if admin already exists
+        const checkAdmin = await client.query(
+            'SELECT * FROM users WHERE username = $1',
+            ['admin']
+        );
+        
+        if (checkAdmin.rows.length === 0) {
+            const hashedPassword = await bcrypt.hash('admin123', 10);
+            
+            await client.query(
+                'INSERT INTO users (username, password) VALUES ($1, $2)',
+                ['admin', hashedPassword]
+            );
+            
+            console.log('Admin user created successfully!');
+            console.log('   Username: admin');
+            console.log('   Password: admin123');
+        } else {
+            console.log('Admin user already exists');
+        }
+    } catch (error) {
+        console.error('Error creating admin:', error);
+    }
+}
 
-async function createTable() {
+// Renamed for clarity
+async function createVenuesTable() {
     const createTableQuery = `
         CREATE TABLE IF NOT EXISTS venues (
             id SERIAL PRIMARY KEY,
-            name VARCHAR(255),
+            name VARCHAR(255) NOT NULL,
             url VARCHAR(500),
             district VARCHAR(100),
             category VARCHAR(100),
@@ -39,11 +76,30 @@ async function createTable() {
         await client.query(createTableQuery);
         console.log('Table "venues" created or already exists');
     } catch (err) {
-        console.error('Error creating table', err.stack);
+        console.error('Error creating venues table', err.stack);
+        throw err; // Re-throw to handle in connectDB
     }
 }
 
-createTable()
+// NEW FUNCTION - Creates users table for authentication
+async function createUsersTable() {
+    const createUsersTableQuery = `
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username VARCHAR(50) UNIQUE NOT NULL,
+            password VARCHAR(255) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    `;
+    
+    try {
+        await client.query(createUsersTableQuery);
+        console.log('Table "users" created or already exists');
+    } catch (err) {
+        console.error('Error creating users table', err.stack);
+        throw err; // Re-throw to handle in connectDB
+    }
+}
 
 async function addSampleVenues() {
      // Check if table is empty first
@@ -201,5 +257,8 @@ async function addSampleVenues() {
         }
     }
 }
+
+// Start connection
+connectDB();
 
 module.exports = client;

@@ -30,6 +30,9 @@ services:
       - ./backend/.env
     ports:
       - "3000:3000"
+    volumes:
+      - ./backend:/usr/src/app  # Mount backend code
+      - /usr/src/app/node_modules  # Prevent overwriting node_modules
     depends_on:
       db:
         condition: service_healthy
@@ -42,6 +45,8 @@ services:
     restart: always
     ports:
       - "80:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html  # Mount frontend code
     depends_on:
       - backend
     networks:
