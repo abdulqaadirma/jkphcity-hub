@@ -4,8 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jkpg City Guide</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>frontend</h1>
+    <header>
+        <h1>Jkpg City Guide</h1>
+        <div id="auth-section">
+            <div id="login-form">
+                <input type="text" id="username" placeholder="Username">
+                <input type="password" id="password" placeholder="Password">
+                <button onclick="login()">Login</button>
+            </div>
+            <div id="user-info" style="display: none;">
+                <span id="welcome-message"></span>
+                <button onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div id="admin-panel" style="display: none;">
+            <h2>Admin Panel</h2>
+            <form id="venue-form">
+                <input type="text" id="venue-name" placeholder="Venue Name" required>
+                <input type="text" id="venue-url" placeholder="URL">
+                <input type="text" id="venue-district" placeholder="District">
+                <input type="text" id="venue-category" placeholder="Category">
+                <input type="text" id="venue-phone" placeholder="Phone">
+                <textarea id="venue-description" placeholder="Description"></textarea>
+                <button type="submit">Add Venue</button>
+            </form>
+        </div>
+
+        <div id="filters">
+            <button onclick="filterByDistrict('all')">All</button>
+            <button onclick="filterByDistrict('Öster')">Öster</button>
+            <button onclick="filterByDistrict('Väster')">Väster</button>
+            <button onclick="filterByDistrict('Atollen')">Atollen</button>
+            <button onclick="filterByDistrict('Tändsticksområdet')">Tändsticksområdet</button>
+            <input type="text" id="search" placeholder="Search venues..." onkeyup="searchVenues()">
+        </div>
+
+        <div id="venues-container"></div>
+    </main>
+
+    <script src="script.js"></script>
 </body>
 </html>
