@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadVenues();
 });
 
-// Authentication
+// ========== AUTHENTICATION ==========
 async function checkAuth() {
     try {
         const response = await fetch(`${API_URL}/api/auth/check`, {
@@ -24,7 +24,6 @@ async function checkAuth() {
                 currentUser = null;
             }
         }
-        // Always load venues after auth check
         loadVenues();
     } catch (error) {
         console.error('Auth check error:', error);
@@ -49,16 +48,16 @@ async function login() {
             body: JSON.stringify({ username, password })
         });
 
+        const data = await response.json();
+
         if (response.ok) {
-            const data = await response.json();
             currentUser = { username: data.username };
             showUserInfo();
             document.getElementById('username').value = '';
             document.getElementById('password').value = '';
-            // Reload venues to show edit/delete buttons
             loadVenues();
         } else {
-            alert('Login failed: Invalid credentials');
+            alert('Login failed: ' + (data.message || 'Invalid credentials'));
         }
     } catch (error) {
         console.error('Login error:', error);
@@ -80,7 +79,7 @@ async function logout() {
     document.getElementById('login-form').style.display = 'flex';
     document.getElementById('user-info').style.display = 'none';
     document.getElementById('admin-panel').style.display = 'none';
-    // Reload venues to hide edit/delete buttons
+    closeCreateForm();
     loadVenues();
 }
 
@@ -89,9 +88,49 @@ function showUserInfo() {
     document.getElementById('user-info').style.display = 'flex';
     document.getElementById('welcome-message').textContent = `Welcome, ${currentUser.username}!`;
     document.getElementById('admin-panel').style.display = 'block';
+    // Create form is hidden by default - only button shows
 }
 
-// Venue Management
+// ========== ADMIN PANEL UI CONTROL ==========
+function toggleCreateForm() {
+    const container = document.getElementById('create-form-container');
+    const button = document.getElementById('show-create-btn');
+    
+    if (container.style.display === 'none') {
+        container.style.display = 'block';
+        button.textContent = '- Hide Create Form';
+    } else {
+        container.style.display = 'none';
+        button.textContent = '+ Create New Venue';
+        // Reset form when hiding
+        document.getElementById('venue-form').reset();
+    }
+}
+
+function closeCreateForm() {
+    document.getElementById('create-form-container').style.display = 'none';
+    document.getElementById('show-create-btn').textContent = '+ Create New Venue';
+    document.getElementById('venue-form').reset();
+}
+
+// ========== EDIT MODAL CONTROL ==========
+function openEditModal(venue) {
+    document.getElementById('edit-modal').style.display = 'flex';
+    document.getElementById('edit-venue-id').value = venue.id;
+    document.getElementById('edit-venue-name').value = venue.name || '';
+    document.getElementById('edit-venue-url').value = venue.url || '';
+    document.getElementById('edit-venue-district').value = venue.district || '';
+    document.getElementById('edit-venue-category').value = venue.category || '';
+    document.getElementById('edit-venue-phone').value = venue.phone || '';
+    document.getElementById('edit-venue-description').value = venue.description || '';
+}
+
+function closeEditModal() {
+    document.getElementById('edit-modal').style.display = 'none';
+    document.getElementById('edit-form').reset();
+}
+
+// ========== VENUE MANAGEMENT ==========
 async function loadVenues() {
     try {
         const response = await fetch(`${API_URL}/api/venues`, {
@@ -114,44 +153,25 @@ function displayVenues(venues) {
         const card = document.createElement('div');
         card.className = 'venue-card';
         
-        // Format website URL
+        // Build HTML sections
         let websiteHtml = '';
         if (venue.url) {
             const url = venue.url.startsWith('http') ? venue.url : `https://${venue.url}`;
             websiteHtml = `<p><strong>Website:</strong> <a href="${url}" target="_blank" rel="noopener noreferrer">${venue.url}</a></p>`;
         }
 
-        // District
-        let districtHtml = '';
-        if (venue.district) {
-            districtHtml = `<p><strong>District:</strong> ${venue.district}</p>`;
-        }
+        let districtHtml = venue.district ? `<p><strong>District:</strong> ${venue.district}</p>` : '';
+        let categoryHtml = venue.category ? `<p><strong>Category:</strong> ${venue.category}</p>` : '';
+        let phoneHtml = venue.phone ? `<p><strong>Phone:</strong> ${venue.phone}</p>` : '';
+        let descriptionHtml = venue.description ? `<p>${venue.description}</p>` : '';
 
-        // Category (extended data)
-        let categoryHtml = '';
-        if (venue.category) {
-            categoryHtml = `<p><strong>Category:</strong> ${venue.category}</p>`;
-        }
-
-        // Phone (extended data)
-        let phoneHtml = '';
-        if (venue.phone) {
-            phoneHtml = `<p><strong>Phone:</strong> ${venue.phone}</p>`;
-        }
-
-        // Description (extended data)
-        let descriptionHtml = '';
-        if (venue.description) {
-            descriptionHtml = `<p>${venue.description}</p>`;
-        }
-
-        // CORRECT: Only show Edit/Delete buttons when user IS logged in
+        // Actions for logged-in users
         let actions = '';
         if (currentUser) {
             actions = `
-                <div class="venue-card-buttons">
-                    <button class="edit" onclick="editVenue(${venue.id})">Edit</button>
-                    <button class="delete" onclick="deleteVenue(${venue.id})">Delete</button>
+                <div class="venue-actions">
+                    <button class="edit-btn" onclick="editVenue(${venue.id})">Edit</button>
+                    <button class="delete-btn" onclick="deleteVenue(${venue.id})">Delete</button>
                 </div>
             `;
         }
@@ -174,7 +194,7 @@ function displayVenues(venues) {
     }
 }
 
-// Admin functions
+// ========== CREATE VENUE ==========
 document.getElementById('venue-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -187,7 +207,6 @@ document.getElementById('venue-form').addEventListener('submit', async (e) => {
         description: document.getElementById('venue-description').value
     };
 
-    // Validate required fields
     if (!venueData.name) {
         alert('Venue name is required');
         return;
@@ -196,15 +215,14 @@ document.getElementById('venue-form').addEventListener('submit', async (e) => {
     try {
         const response = await fetch(`${API_URL}/api/venues`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
             body: JSON.stringify(venueData)
         });
 
         if (response.ok) {
             e.target.reset();
+            closeCreateForm();
             loadVenues();
         } else {
             const data = await response.json();
@@ -216,6 +234,54 @@ document.getElementById('venue-form').addEventListener('submit', async (e) => {
     }
 });
 
+// ========== EDIT VENUE ==========
+async function editVenue(id) {
+    const venue = allVenues.find(v => v.id === id);
+    if (venue) {
+        openEditModal(venue);
+    }
+}
+
+document.getElementById('edit-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const id = document.getElementById('edit-venue-id').value;
+    const venueData = {
+        name: document.getElementById('edit-venue-name').value,
+        url: document.getElementById('edit-venue-url').value,
+        district: document.getElementById('edit-venue-district').value,
+        category: document.getElementById('edit-venue-category').value,
+        phone: document.getElementById('edit-venue-phone').value,
+        description: document.getElementById('edit-venue-description').value
+    };
+
+    if (!venueData.name) {
+        alert('Venue name is required');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/api/venues/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(venueData)
+        });
+
+        if (response.ok) {
+            closeEditModal();
+            loadVenues();
+        } else {
+            const data = await response.json();
+            alert('Failed to update venue: ' + (data.message || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error updating venue:', error);
+        alert('Error updating venue');
+    }
+});
+
+// ========== DELETE VENUE ==========
 async function deleteVenue(id) {
     if (!confirm('Are you sure you want to delete this venue?')) return;
 
@@ -223,9 +289,7 @@ async function deleteVenue(id) {
         const response = await fetch(`${API_URL}/api/venues/${id}`, {
             method: 'DELETE',
             credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            headers: { 'Content-Type': 'application/json' }
         });
 
         if (response.ok) {
@@ -240,57 +304,7 @@ async function deleteVenue(id) {
     }
 }
 
-async function editVenue(id) {
-    const venue = allVenues.find(v => v.id === id);
-    if (!venue) return;
-
-    // For Grade 5, you should have a proper edit form
-    // This is a simple prompt-based edit
-    const newName = prompt('Enter new name:', venue.name);
-    const newDistrict = promt(`Enter new district:`, venue.district)
-    const newCategory = promt(`Enter new category:`, venue.category)
-    const newWebsite = promt(`Enter new website:`, venue.url)
-    const newPhone = prompt(`Enter new phone:`, venue.phone)
-    const newDescription = prompt(`Enter new description:`, venue.description)
-
-    /*
-    id SERIAL PRIMARY KEY,
-            name VARCHAR(255) NOT NULL,
-            url VARCHAR(500),
-            district VARCHAR(100),
-            category VARCHAR(100),
-            phone VARCHAR(50),
-            description TEXT
-    */
-
-
-    if (newName && newName !== venue.name) {
-        venue.name = newName;
-        
-        try {
-            const response = await fetch(`${API_URL}/api/venues/${id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include',
-                body: JSON.stringify(venue)
-            });
-
-            if (response.ok) {
-                loadVenues();
-            } else {
-                const data = await response.json();
-                alert('Failed to update venue: ' + (data.message || 'Unknown error'));
-            }
-        } catch (error) {
-            console.error('Error updating venue:', error);
-            alert('Error updating venue');
-        }
-    }
-}
-
-// Filtering and Search
+// ========== FILTERING AND SEARCH ==========
 function filterByDistrict(district) {
     if (district === 'all') {
         displayVenues(allVenues);

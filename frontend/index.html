@@ -23,17 +23,47 @@
     </header>
 
     <main>
+        <!-- Admin Panel - Only shows Create button initially -->
         <div id="admin-panel" style="display: none;">
             <h2>Admin Panel</h2>
-            <form id="venue-form">
-                <input type="text" id="venue-name" placeholder="Venue Name" required>
-                <input type="text" id="venue-url" placeholder="URL">
-                <input type="text" id="venue-district" placeholder="District">
-                <input type="text" id="venue-category" placeholder="Category">
-                <input type="text" id="venue-phone" placeholder="Phone">
-                <textarea id="venue-description" placeholder="Description"></textarea>
-                <button type="submit">Add Venue</button>
-            </form>
+            <button id="show-create-btn" onclick="toggleCreateForm()" class="admin-toggle-btn">+ Create New Venue</button>
+            
+            <!-- Create Form (hidden by default) -->
+            <div id="create-form-container" style="display: none;">
+                <h3>Add New Venue</h3>
+                <form id="venue-form" class="admin-form">
+                    <input type="text" id="venue-name" placeholder="Venue Name *" required>
+                    <input type="text" id="venue-url" placeholder="URL">
+                    <input type="text" id="venue-district" placeholder="District">
+                    <input type="text" id="venue-category" placeholder="Category">
+                    <input type="text" id="venue-phone" placeholder="Phone">
+                    <textarea id="venue-description" placeholder="Description" rows="3"></textarea>
+                    <div class="form-buttons">
+                        <button type="submit" class="save-btn">Save Venue</button>
+                        <button type="button" onclick="toggleCreateForm()" class="cancel-btn">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Edit Form Modal (hidden by default) -->
+        <div id="edit-modal" style="display: none;" class="modal">
+            <div class="modal-content">
+                <h3>Edit Venue</h3>
+                <form id="edit-form" class="admin-form">
+                    <input type="hidden" id="edit-venue-id">
+                    <input type="text" id="edit-venue-name" placeholder="Venue Name *" required>
+                    <input type="text" id="edit-venue-url" placeholder="URL">
+                    <input type="text" id="edit-venue-district" placeholder="District">
+                    <input type="text" id="edit-venue-category" placeholder="Category">
+                    <input type="text" id="edit-venue-phone" placeholder="Phone">
+                    <textarea id="edit-venue-description" placeholder="Description" rows="3"></textarea>
+                    <div class="form-buttons">
+                        <button type="submit" class="save-btn">Update Venue</button>
+                        <button type="button" onclick="closeEditModal()" class="cancel-btn">Cancel</button>
+                    </div>
+                </form>
+            </div>
         </div>
 
         <div id="filters">
