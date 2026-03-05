@@ -5,9 +5,10 @@
 Who should do what?
 Write here!
 
-- Begin login: Abdulqaadir
+- setup project with docker and begin login: Abdulqaadir
 - Begin web-page: Mårten
 - Begin REST API calls (GET, POST, PUT, DELETE) on client side: Daniel
+- Backend login api and frontend: Tesfay
 
 ## Frontend
 
