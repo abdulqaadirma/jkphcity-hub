@@ -66,12 +66,17 @@
             </div>
         </div>
 
-        <div id="filters">
+       <div id="filters">
             <button onclick="filterByDistrict('all')">All</button>
             <button onclick="filterByDistrict('Öster')">Öster</button>
             <button onclick="filterByDistrict('Väster')">Väster</button>
             <button onclick="filterByDistrict('Atollen')">Atollen</button>
             <button onclick="filterByDistrict('Tändsticksområdet')">Tändsticksområdet</button>
+
+            <button onclick="sortVenues('az')">Sort A-Z</button>
+            <button onclick="sortVenues('za')">Sort Z-A</button>
+            <button onclick="sortVenues('district')">Sort by District</button>
+
             <input type="text" id="search" placeholder="Search venues..." onkeyup="searchVenues()">
         </div>
 

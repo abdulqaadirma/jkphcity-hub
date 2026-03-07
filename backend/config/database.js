@@ -30,34 +30,6 @@ async function connectDB() {
     }
 }
 
-// Create admin user (FIXED - no duplicate connection)
-async function createAdminUser() {
-    try {
-        // Check if admin already exists
-        const checkAdmin = await client.query(
-            'SELECT * FROM users WHERE username = $1',
-            ['admin']
-        );
-        
-        if (checkAdmin.rows.length === 0) {
-            const hashedPassword = await bcrypt.hash('admin123', 10);
-            
-            await client.query(
-                'INSERT INTO users (username, password) VALUES ($1, $2)',
-                ['admin', hashedPassword]
-            );
-            
-            console.log('Admin user created successfully!');
-            console.log('   Username: admin');
-            console.log('   Password: admin123');
-        } else {
-            console.log('Admin user already exists');
-        }
-    } catch (error) {
-        console.error('Error creating admin:', error);
-    }
-}
-
 // Renamed for clarity
 async function createVenuesTable() {
     const createTableQuery = `
@@ -88,16 +60,44 @@ async function createUsersTable() {
             id SERIAL PRIMARY KEY,
             username VARCHAR(50) UNIQUE NOT NULL,
             password VARCHAR(255) NOT NULL,
+            role VARCHAR(20) NOT NULL DEFAULT 'user',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     `;
-    
+
     try {
         await client.query(createUsersTableQuery);
         console.log('Table "users" created or already exists');
     } catch (err) {
         console.error('Error creating users table', err.stack);
-        throw err; // Re-throw to handle in connectDB
+        throw err;
+    }
+}
+
+// Create admin user (FIXED - no duplicate connection)
+async function createAdminUser() {
+    try {
+        const checkAdmin = await client.query(
+            'SELECT * FROM users WHERE username = $1',
+            ['admin']
+        );
+
+        if (checkAdmin.rows.length === 0) {
+            const hashedPassword = await bcrypt.hash('admin123', 10);
+
+            await client.query(
+                'INSERT INTO users (username, password, role) VALUES ($1, $2, $3)',
+                ['admin', hashedPassword, 'admin']
+            );
+
+            console.log('Admin user created successfully!');
+            console.log('Username: admin');
+            console.log('Password: admin123');
+        } else {
+            console.log('Admin user already exists');
+        }
+    } catch (error) {
+        console.error('Error creating admin:', error);
     }
 }
 

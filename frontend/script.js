@@ -1,6 +1,9 @@
 const API_URL = 'http://localhost:3000';
 let currentUser = null;
 let allVenues = [];
+let currentDistrictFilter = 'all';
+let currentSearchTerm = '';
+let currentSort = 'none';
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -14,21 +17,29 @@ async function checkAuth() {
         const response = await fetch(`${API_URL}/api/auth/check`, {
             credentials: 'include'
         });
-        
+
         if (response.ok) {
             const data = await response.json();
             if (data.authenticated) {
-                currentUser = { username: data.username };
+                currentUser = { username: data.username, role: data.role };
                 showUserInfo();
             } else {
                 currentUser = null;
+                hideUserInfo();
             }
         }
         loadVenues();
     } catch (error) {
         console.error('Auth check error:', error);
         currentUser = null;
+        hideUserInfo();
     }
+}
+
+function hideUserInfo() {
+    document.getElementById('login-form').style.display = 'flex';
+    document.getElementById('user-info').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'none';
 }
 
 async function login() {
@@ -87,8 +98,12 @@ function showUserInfo() {
     document.getElementById('login-form').style.display = 'none';
     document.getElementById('user-info').style.display = 'flex';
     document.getElementById('welcome-message').textContent = `Welcome, ${currentUser.username}!`;
-    document.getElementById('admin-panel').style.display = 'block';
-    // Create form is hidden by default - only button shows
+
+    if (currentUser.role === 'admin') {
+        document.getElementById('admin-panel').style.display = 'block';
+    } else {
+        document.getElementById('admin-panel').style.display = 'none';
+    }
 }
 
 // ========== ADMIN PANEL UI CONTROL ==========
@@ -138,7 +153,7 @@ async function loadVenues() {
         });
         if (response.ok) {
             allVenues = await response.json();
-            displayVenues(allVenues);
+            refreshVenues();
         }
     } catch (error) {
         console.error('Error loading venues:', error);
@@ -167,7 +182,7 @@ function displayVenues(venues) {
 
         // Actions for logged-in users
         let actions = '';
-        if (currentUser) {
+        if (currentUser && currentUser.role === "admin") {
             actions = `
                 <div class="venue-actions">
                     <button class="edit-btn" onclick="editVenue(${venue.id})">Edit</button>
@@ -305,21 +320,52 @@ async function deleteVenue(id) {
 }
 
 // ========== FILTERING AND SEARCH ==========
-function filterByDistrict(district) {
-    if (district === 'all') {
-        displayVenues(allVenues);
-    } else {
-        const filtered = allVenues.filter(v => v.district === district);
-        displayVenues(filtered);
+function getVisibleVenues() {
+    let venues = [...allVenues];
+
+    if (currentDistrictFilter !== 'all') {
+        venues = venues.filter(v => v.district === currentDistrictFilter);
     }
+
+    if (currentSearchTerm) {
+        const term = currentSearchTerm.toLowerCase();
+        venues = venues.filter(venue =>
+            venue.name.toLowerCase().includes(term) ||
+            (venue.district && venue.district.toLowerCase().includes(term)) ||
+            (venue.category && venue.category.toLowerCase().includes(term))
+        );
+    }
+
+    if (currentSort === 'az') {
+        venues.sort((a, b) => a.name.localeCompare(b.name, 'sv'));
+    } else if (currentSort === 'za') {
+        venues.sort((a, b) => b.name.localeCompare(a.name, 'sv'));
+    } else if (currentSort === 'district') {
+        venues.sort((a, b) => {
+            const districtA = a.district || '';
+            const districtB = b.district || '';
+            return districtA.localeCompare(districtB, 'sv') || a.name.localeCompare(b.name, 'sv');
+        });
+    }
+
+    return venues;
+}
+
+function refreshVenues() {
+    displayVenues(getVisibleVenues());
+}
+
+function filterByDistrict(district) {
+    currentDistrictFilter = district;
+    refreshVenues();
 }
 
 function searchVenues() {
-    const searchTerm = document.getElementById('search').value.toLowerCase();
-    const filtered = allVenues.filter(venue => 
-        venue.name.toLowerCase().includes(searchTerm) ||
-        (venue.district && venue.district.toLowerCase().includes(searchTerm)) ||
-        (venue.category && venue.category.toLowerCase().includes(searchTerm))
-    );
-    displayVenues(filtered);
+    currentSearchTerm = document.getElementById('search').value.trim();
+    refreshVenues();
+}
+
+function sortVenues(sortType) {
+    currentSort = sortType;
+    refreshVenues();
 }

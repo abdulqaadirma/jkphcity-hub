@@ -36,7 +36,7 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
     try {
         const { username, password } = req.body;
-        
+
         const user = await User.findByUsername(username);
         if (!user) {
             return res.status(401).json({ message: 'Invalid credentials' });
@@ -47,18 +47,20 @@ exports.login = async (req, res) => {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        // Create session token
         const token = crypto.randomBytes(64).toString('hex');
-        sessions[token] = { id: user.id, username: user.username };
-        
-        // Set cookie
+        sessions[token] = { id: user.id, username: user.username, role: user.role };
+
         res.cookie('authToken', token, { 
             signed: true, 
             httpOnly: true,
-            maxAge: 24 * 60 * 60 * 1000 // 24 hours
+            maxAge: 24 * 60 * 60 * 1000
         });
-        
-        res.json({ message: 'Login successful', username: user.username });
+
+        res.json({ 
+            message: 'Login successful', 
+            username: user.username,
+            role: user.role
+        });
     } catch (error) {
         console.error('Login error:', error);
         res.status(500).json({ message: error.message });
@@ -77,7 +79,11 @@ exports.logout = (req, res) => {
 exports.checkAuth = (req, res) => {
     const token = req.signedCookies.authToken;
     if (token && sessions[token]) {
-        res.json({ authenticated: true, username: sessions[token].username });
+        res.json({ 
+            authenticated: true, 
+            username: sessions[token].username,
+            role: sessions[token].role
+        });
     } else {
         res.json({ authenticated: false });
     }
